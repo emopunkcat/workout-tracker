@@ -69,7 +69,7 @@
         }
         .workout-day {
             background-color: #27ae60;
-            color: #ecf0f1;
+            color: #ecf0e1;
             font-weight: bold;
         }
         .calendar-container {
@@ -111,39 +111,173 @@
             background-color: #4a90e2;
             border-radius: 4px;
         }
+
+        /* Add these new styles for the form */
+        .add-workout-form {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .add-workout-form h2 {
+            margin-top: 0;
+            color: #4a90e2;
+            text-align: center;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .add-workout-form select,
+        .add-workout-form input[type="number"],
+        .add-workout-form input[type="submit"] {
+            width: calc(50% - 5px);
+            padding: 10px;
+            border: 1px solid #3a3a3a;
+            background-color: #333333;
+            color: #e0e0e0;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .add-workout-form input[type="submit"] {
+            width: 100%;
+            background-color: #4a90e2;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .add-workout-form input[type="submit"]:hover {
+            background-color: #3a7bc8;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+
+            .add-workout-form select,
+            .add-workout-form input[type="number"] {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+
+        .content-wrapper {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .workouts-column, .graphs-column {
+            width: 48%; /* Adjust as needed */
+        }
+
+        .chart-container {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            height: 300px; /* Set a fixed height for the chart container */
+        }
+
+        .chart-container h3 {
+            color: #4a90e2;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+
+            .workouts-column, .graphs-column {
+                width: 100%;
+            }
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <h1>Workout Stats</h1>
     
-    {% set exercises = workouts|groupby('2') %}
-    {% for exercise, group in exercises %}
-    <div class="exercise-group">
-        <h2>{{ exercise }}</h2>
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Sets</th>
-                        <th>Reps</th>
-                        <th>Weight (lb)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for workout in group %}
-                    <tr>
-                        <td>{{ workout[1][:10] }}</td>
-                        <td>{{ workout[3] }}</td>
-                        <td>{{ workout[4] }}</td>
-                        <td>{{ workout[5] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="add-workout-form">
+        <h2>Add New Workout</h2>
+        <form action="{{ url_for('add_workout') }}" method="post">
+            <div class="form-row">
+                <select name="exercise" required>
+                    <option value="">Select Exercise</option>
+                    <option value="Chest Press">Chest Press</option>
+                    <option value="Lat Raises">Lat Raises</option>
+                    <option value="Shoulder Press">Shoulder Press</option>
+                    <option value="Bicep Curls">Bicep Curls</option>
+                    <option value="Pull-Ups">Pull-Ups</option>
+                    <option value="Lat Pull-Downs">Lat Pull-Downs</option>
+                    <option value="Tricep Pulldowns">Tricep Pulldowns</option>
+                    <option value="Forearm Curls">Forearm Curls</option>
+                </select>
+                <input type="number" name="sets" placeholder="Sets" required>
+            </div>
+            <div class="form-row">
+                <input type="number" name="reps" placeholder="Reps" required>
+                <input type="number" name="weight" step="0.1" placeholder="Weight (lb)" required>
+            </div>
+            <input type="submit" value="Add Workout">
+        </form>
+    </div>
+
+    <div class="content-wrapper">
+        <div class="workouts-column">
+            {% set exercises = workouts|groupby('2') %}
+            {% for exercise, group in exercises %}
+            <div class="exercise-group">
+                <h2>{{ exercise }}</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Sets</th>
+                                <th>Reps</th>
+                                <th>Weight (lb)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for workout in group %}
+                            <tr>
+                                <td>{{ workout[1][:10] }}</td>
+                                <td>{{ workout[3] }}</td>
+                                <td>{{ workout[4] }}</td>
+                                <td>{{ workout[5] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="graphs-column">
+            {% for exercise, data in chart_data.items() %}
+            <div class="chart-container">
+                <h3>{{ exercise }} Progress</h3>
+                <canvas id="chart-{{ exercise | replace(' ', '-') }}"></canvas>
+            </div>
+            {% endfor %}
         </div>
     </div>
-    {% endfor %}
 
     <!-- Separator -->
     <hr class="separator">
@@ -155,11 +289,49 @@
         {% set is_leap_year = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) %}
         {% set days_in_year = 366 if is_leap_year else 365 %}
         {% for day in range(1, days_in_year + 1) %}
-            {% set date = '%04d-%03d'|format(year, day)|strftime('%Y-%m-%d') %}
+            {% set date = '%04d-%03d'|format(year, day)|custom_strftime('%Y-%m-%d') %}
             <div class="day {% if date in workout_dates %}workout-day{% endif %}">
                 {{ day }}
             </div>
         {% endfor %}
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for exercise, data in chart_data.items() %}
+        new Chart(document.getElementById('chart-{{ exercise | replace(' ', '-') }}').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: {{ data.dates | tojson }},
+                datasets: [{
+                    label: 'Weight (lb)',
+                    data: {{ data.weights | tojson }},
+                    borderColor: '#4a90e2',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    },
+                    x: {
+                        ticks: {
+                            maxTicksLimit: 10 // Limit the number of x-axis labels
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+        {% endfor %}
+    });
+    </script>
 </body>
 </html>

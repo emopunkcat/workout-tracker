@@ -31,5 +31,10 @@ def view_workouts():
     # Pass this to your template along with other data
     return render_template('workouts.html', workouts=workouts, workout_dates=workout_dates, first_days=first_days)
 
+def strftime(value, format='%Y-%m-%d'):
+    return datetime.strptime(value, '%Y-%j').strftime(format)
+
+app.jinja_env.filters['strftime'] = strftime
+
 if __name__ == '__main__':
     app.run(debug=True)
